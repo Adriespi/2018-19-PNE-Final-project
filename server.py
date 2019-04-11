@@ -23,16 +23,52 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
             info = j.read()
             selectinfo = 'text/html'
             code = 200 #http status code for 'ok'
+        elif meth == 'listSpecies':
+            server = 'http://rest.ensembl.org'
+            dir = '/info/species?'
+            try:
+                top = meth_list[1][6:]
+            except IndexError:
+                top = 'none'
+            j = requests.get(server + dir, headers={'Content-Type': 'application/json'})
+            readjson = j.json()
+            species = '<ul>'#creating a string for the list of species
+            k = 0 #setting up a counter and initializing it in 0
+            for i in readjson['species']:
+                species = species + '<li>' + i['display_name']#adding item to the list (</li>)
+                species = species + '</li>'
+                k += 1
+                #stablish the condition for the for loop to stop
+                if str(k) == top:
+                    break
+            l = open('top.html','w')
+            l.write('''<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>FULL LIST OF AVAILABLE SPECIES</title>
+            </head>
+            <body>
+               Total number of the species : {} <br>
+               Names of the species selected : {} <br>
+               Limit chosen : {}
+            </body>
+            </html>'''.format(len(readjson["species"]), species, top))
+            h = open('top.html','r')
+            code = 200
+            info = h.read()
+            selectinfo = 'text/html'
+
         elif meth == '/karyotype':#the use selects the karyotype endpoint
-            server = 'http://rest.ensembl.org'#api rest endpoint
-            dir = '/info/assembly/'
-            #we put the hole karyotype extraction info in a try just in case the user does not enter one of the index options
+            server = 'http://rest.ensembl.org'#api rest
+            dir = '/info/assembly/'#endpoint
+            #we put the whole karyotype extraction info in a try just in case the user does not enter one of the index options
             try:
                 userschoice = meth_list[1][7:]
                 userschoice = userschoice.replace('+','_').lower()
-                f = request.get(server + dir + userschoice + '?',headers={'Content-Type": "application/json'})#data that must be extracted
+                f = requests.get(server + dir + userschoice + '?',headers={'Content-Type": "application/json'})#data that must be extracted
                 karyotype = ''#creating empty variable to store data
-                readjson = r.json()
+                readjson = f.json()
 
                 for i in readjson['karyotype']:
                     karyotype = karyotype + '<br>' + i
