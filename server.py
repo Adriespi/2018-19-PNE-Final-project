@@ -17,7 +17,9 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
         termcolor.cprint(self.requestline,'blue')#first line
         #stablish the path to follow(.path)
         meth_list = self.path.split('?')
+        print(meth_list)
         meth = meth_list[0]
+        print(meth)
         if meth == '/':
             j = open('indexfinalpractice.html','r')#open the html file to use it
             info = j.read()
@@ -27,7 +29,8 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
             server = 'http://rest.ensembl.org'
             dir = '/info/species?'
             try:
-                top = meth_list[1][6:]
+                print(meth_list)
+                top = meth_list[0][6:]
             except IndexError:
                 top = 'none'
             j = requests.get(server + dir, headers={'Content-Type': 'application/json'})
@@ -49,14 +52,14 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                 <title>FULL LIST OF AVAILABLE SPECIES</title>
             </head>
             <body>
-               Total number of the species : {} <br>
-               Names of the species selected : {} <br>
-               Limit chosen : {}
+                Total number of the species : {} <br>
+                Names of the species selected : {} <br>
+                Limit chosen : {}
             </body>
             </html>'''.format(len(readjson["species"]), species, top))
-            h = open('top.html','r')
+            f = open('top.html','r')
             code = 200
-            info = h.read()
+            info = f.read()
             selectinfo = 'text/html'
 
         elif meth == '/karyotype':#the use selects the karyotype endpoint
@@ -88,30 +91,73 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                 #the following code in meant to work in case the user enters non-existing options
                 #or incorrect parameters
             except KeyError:
-                j = open('aqui van los nombres del archivo html de los errores','r')
+                j = open('data_error.html','r')
                 code = 200
+                info = j.read()
+                selectinfo = 'text/html'
+
             except IndexError:
-                j = open('aqui van los nombres del archivo html de los errores','r')
+                j = open('parameter_error.html','r')
                 code = 200
+                info = j.read()
+                selectinfo = 'text/html'
+
+        elif meth == "/chromosomeLength":
+            try:
+                options = meth_list[1].split("&")
+                chromosome = options[1][7:].upper()
+                userschoice = options[0][7:]
+                userschoice = userschoice.replace("+", "_")
+                server = "http://rest.ensembl.org"
+                dir = "/info/assembly/"
+                f = requests.get(server + dir + userschoice + "?", headers={"Content-Type": "application/json"})
+
+
+                decoded = f.json()
+                chromosomelength = "none"
+                for i in decoded["top_level_region"]:
+                    if i["name"] == chromosome:
+                        chromosomelength = i["length"]
+                if chromosomelength == "none":
+                     j = open("data_error.html", "r")
+                     selectinfo = 'text/html'
+                else:
+                    j = open("length.html", "w")
+                    j.write('''<!DOCTYPE html>
+                                <html lang="en">
+                                    <head>
+                                         <meta charset="UTF-8">
+                                        <title>SELECTED CHROMOSOME'S LENGTH</title>
+                                    </head>
+                                    <body>
+                                        Chromosome length:   {}
+                                    </body>
+                                </html>'''.format(chromosomelength))
+
+
+                    # Read the file
+                    j = open("length.html", 'r')
+            except IndexError:
+                j = open("parameter_error.html", "r")
+                code = 200
+            # Read the file
             info = j.read()
-            selectinfo = 'text/html'
+            selectinfo= 'text/html'
+
+
 
         else:
-            j = open("error.html", "r")
+            j = open("url_error.html", "r")
             code = 200
             info = j.read()
             selectinfo = 'text/html'
         # Generating the response message
-        self.send_response(code)  # -- Status line: OK!
-
+        self.send_response(code)
         # Define the content-type header:
         self.send_header('Content-Type', selectinfo)
         self.send_header('Content-Length', len(str.encode(info)))
-
-        # The header is finished
         self.end_headers()
-
-        # Send the response message
+        # response message
         self.wfile.write(str.encode(info))
 
         return
