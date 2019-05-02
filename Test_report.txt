@@ -1,0 +1,9 @@
+###THIS IS THE TEST REPORT FOR THE BASIC LEVEL###
+
+- The first thing done in the practice was structuring the server code in a way
+that it's management could be done at the same time the index was being built:
+step by step, opening both (the server file and the html index file ) files at
+the same time and work on them simultaneously.
+
+he primal structure of the code is already done, and I decided to test te connection
+to the server, wich works perfectly
