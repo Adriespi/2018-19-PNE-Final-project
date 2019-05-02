@@ -1,10 +1,10 @@
 #SERVER CODE: FINAL PRACTICE#
 #First things first; we import the libraries needed#
 
-import http.server
+import http.server, http.client
 import termcolor
 import socketserver
-import requests
+import requests, json
 
 #Next step is defining the port we're going to use#
 PORT = 8000
@@ -14,93 +14,110 @@ socketserver.TCPServer.allow_reuse_adress = True #this code line allow us to reu
 class TestHandler(http.server.BaseHTTPRequestHandler):
     #get function: access to the get method in the http protocol request
     def do_GET(self):
-        termcolor.cprint(self.requestline,'blue')#first line
-        #stablish the path to follow(.path)
-        meth_list = self.path.split('?')
-        print(meth_list)
-        meth = meth_list[0]
-        print(meth)
-        if meth == '/':
+        path = self.path
+        #1ºmain page
+        if path == '/':
             j = open('indexfinalpractice.html','r')#open the html file to use it
             info = j.read()
-            selectinfo = 'text/html'
-            code = 200 #http status code for 'ok'
-        elif meth == 'listSpecies':
-            server = 'http://rest.ensembl.org'
-            dir = '/info/species?'
-            try:
-                print(meth_list)
-                top = meth_list[0][6:]
-            except IndexError:
-                top = 'none'
-            j = requests.get(server + dir, headers={'Content-Type': 'application/json'})
-            readjson = j.json()
-            species = '<ul>'#creating a string for the list of species
-            k = 0 #setting up a counter and initializing it in 0
-            for i in readjson['species']:
-                species = species + '<li>' + i['display_name']#adding item to the list (</li>)
-                species = species + '</li>'
-                k += 1
-                #stablish the condition for the for loop to stop
-                if str(k) == top:
-                    break
-            l = open('top.html','w')
-            l.write('''<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>FULL LIST OF AVAILABLE SPECIES</title>
-            </head>
-            <body>
-                Total number of the species : {} <br>
-                Names of the species selected : {} <br>
-                Limit chosen : {}
-            </body>
-            </html>'''.format(len(readjson["species"]), species, top))
-            f = open('top.html','r')
-            code = 200
-            info = f.read()
-            selectinfo = 'text/html'
+        #2ºlist species option
+        elif self.path.startswith('/listSpecies'):
+            info = """<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>SPECIES' LIST</title>
+        </head>
+        <body style="background-color: blue;">
+        <p>Full list of available species:<br> </p>
+        <ul>
+        {}
+        </ul>
+        <a href="/"> Back to the main page </a> 
+        </body>
+        </html>"""
+            #href used in order for the user to be able to go back to th main page
+            if path == '/listSpecies':
+                server = 'http://rest.ensembl.org'
+                dir = '/info/species?'
+                l = requests.get(server + dir, headers={'Content-Type: ''application/json'})
+                if not l.ok: #in case request fails, which means there's an error
+                    f = open('data_error.html','r')
+                    info = f.read()#read error html file
+                listspecies= ''''''
+                infojson = l.json()
+                for k, i in enumerate(infojson['species'][:int(len(general['species']))], start=1):
+                    index = i['name']
+                    listspecies += "<li>{}) Name  : {}</li>".format(k, index)
 
-        elif meth == '/karyotype':#the use selects the karyotype endpoint
-            server = 'http://rest.ensembl.org'#api rest
-            dir = '/info/assembly/'#endpoint
-            #we put the whole karyotype extraction info in a try just in case the user does not enter one of the index options
-            try:
-                userschoice = meth_list[1][7:]
-                userschoice = userschoice.replace('+','_').lower()
-                f = requests.get(server + dir + userschoice + '?',headers={'Content-Type": "application/json'})#data that must be extracted
-                karyotype = ''#creating empty variable to store data
-                readjson = f.json()
+                info = info.format(listspecies)
+            else:
+                server = 'http://rest.ensembl.org'
+                dir = '/info/species?'
+                l = requests.get(server + dir, headers={'Content-Type: ''application/json'})
+                if not l.ok:
+                    f = open('data_error.html','r')
+                    info = f.read()
+                infojson = l.json()
+                listspecies= ''''''
+                num = path.split('=')[1] #defining the maximum number of elements in the species list
+                if  num == '':
+                    num2 = int(len(infojson['species']))
+                else:
+                    num2 = int(num)
+                for k, i in enumerate(infojson['species'][:num2],start=1):
+                    index = i['name']
+                    listspecies += "<li>{}) Name  : {}</li>".format(k, index)
 
-                for i in readjson['karyotype']:
-                    karyotype = karyotype + '<br>' + i
-                j = open('karyotype.html','w')#next step is opening, writing and reading the html
-                j.write('''<!DOCTYPE html>
-                            <html lang="en">
-                            <head>
-                                <meta charset="UTF-8">
-                                <title>SPECIES' KARYOTYPE</title>
-                            </head>
-                            <body>
-                               Chromosome names : {}
-                            </body>
-                            </html>'''.format(karyotype))
-                j = open('karyotype.html','r')
-                code = 200 #ok
-                #the following code in meant to work in case the user enters non-existing options
-                #or incorrect parameters
+        #2ºkaryotype option
+        elif self.path.startswith('/karyotype'):
+            info = """<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>KARYOTYPE INFO</title>
+                </head>
+                <body style="background-color: green;">
+                    <p>Here is show the karyotype of the specie you have selected</p>
+                    {}<br>
+                    <a href="/"> back to the main page </a>
+                </body>
+                </html>
+                """
+            #first show that the species is in the list
+            species = (path.split('=')[1]).lower()
+            t = 'info/assembly/' + species + '?content-type=application/json'
+            PORT = 80
+            SERVER = 'rest.ensembl.org'
+            connection = http.client.HTTPConnection(SERVER, PORT)
+            connection.request("GET", t)
+            c = connection.getresponse()
+            data = c.read().decode('utf-8')
+            infojson = json.loads(data)
+
+            #now we proceed to provide the inf to the user
+
+            try:
+                karyo = infojson['karyotype']
+                if karyo == list():
+                    info = info.format("Oops, no karyotype for this species \n Try again! ")
+                #just in case there's no karyotype for the species selected
+                else:
+                    karyo2 = list()
+                    for i in karyo:
+                        if i == 'MT':
+                            #get rid of the mt chromosome
+                            continue
+                        else:
+                            karyo2.append(i)
+                    info = info.format(karyo2)
             except KeyError:
-                j = open('data_error.html','r')
-                code = 200
-                info = j.read()
-                selectinfo = 'text/html'
-
+                f = open('data_error.html', 'r')
+                info = f.read()
             except IndexError:
-                j = open('parameter_error.html','r')
-                code = 200
-                info = j.read()
-                selectinfo = 'text/html'
+                f = open('data_error.html', 'r')
+                info = f.read()
+
+
 
         elif meth == "/chromosomeLength":
             try:
