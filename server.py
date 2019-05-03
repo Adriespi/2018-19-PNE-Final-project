@@ -2,7 +2,6 @@
 #First things first; we import the libraries needed#
 
 import http.server, http.client
-import termcolor
 import socketserver
 import requests, json
 
@@ -49,6 +48,7 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                     names = i['name']
                     list_species += "<li>{}) Common name  : {}</li>".format(k, names)
                 info = info.format(list_species)
+                #extracting information and storing it in the list
             else:
                 server = "http://rest.ensembl.org"
                 dir = "/info/species?"
@@ -79,7 +79,7 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                     <meta charset="UTF-8">
                     <title>KARYOTYPE </title>
                 </head>
-                <body style="background-color: green;">
+                <body style="background-color: lightgreen;">
                     <p>Karyotype selected:</p>
                     {}<br>
                     <a href="/"> back to the main page </a>
@@ -135,7 +135,7 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                     server = "http://rest.ensembl.org"
                     dir = "/info/assembly/" + s + "/" + c + "?"
                     r = requests.get(server + dir, headers={"Content-Type": "application/json"})
-
+                    #.ok is the code 200, which means there's no errors
                     if r.ok:
                         infojson = r.json()
                         length = infojson['length']
@@ -145,7 +145,7 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                                         <meta charset="UTF-8">
                                         <title>CHROMOSOME LENGTH</title>
                                     </head>
-                                    <body style="background-color: lightblue;">
+                                    <body style="background-color: lightgreen;">
                                         <p>Species: {} / Chromosome:{} / Length : {}</p>
                                         <br>
                                         <a href="/"> Main page </a>
