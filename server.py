@@ -20,53 +20,56 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
             j = open('indexfinalpractice.html','r')#open the html file to use it
             info = j.read()
         #2ºlist species option
-        elif self.path.startswith('/listSpecies'):
+        elif self.path.startswith("/listSpecies"):  # listSpecies is select and you send the info
+
             info = """<!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>SPECIES' LIST</title>
+            <title>LISTSPECIES</title>
         </head>
-        <body style="background-color: blue;">
-        <p>Full list of available species:<br> </p>
+        <body style="background-color: lightgreen;">
+        <p>list of species available:<br> </p>
         <ul>
         {}
         </ul>
-        <a href="/"> Back to the main page </a> 
+        <a href="/"> Main page </a>
         </body>
         </html>"""
-            #href used in order for the user to be able to go back to th main page
-            if path == '/listSpecies':
-                server = 'http://rest.ensembl.org'
-                dir = '/info/species?'
-                l = requests.get(server + dir, headers={'Content-Type: ''application/json'})
-                if not l.ok: #in case request fails, which means there's an error
-                    f = open('data_error.html','r')
-                    info = f.read()#read error html file
-                listspecies= ''''''
-                infojson = l.json()
-                for k, i in enumerate(infojson['species'][:int(len(general['species']))], start=1):
-                    index = i['name']
-                    listspecies += "<li>{}) Name  : {}</li>".format(k, index)
-
-                info = info.format(listspecies)
-            else:
-                server = 'http://rest.ensembl.org'
-                dir = '/info/species?'
-                l = requests.get(server + dir, headers={'Content-Type: ''application/json'})
-                if not l.ok:
-                    f = open('data_error.html','r')
+            if path == "/listSpecies":
+                server = "http://rest.ensembl.org"
+                dir = "/info/species?"
+                r = requests.get(server + dir, headers={"Content-Type": "application/json"})
+                if not r.ok:
+                    f = open('error.html', 'r')
                     info = f.read()
-                infojson = l.json()
-                listspecies= ''''''
-                num = path.split('=')[1] #defining the maximum number of elements in the species list
-                if  num == '':
-                    num2 = int(len(infojson['species']))
+                infojson = r.json()
+                list_species = """"""
+                for k, i in enumerate(infojson['species'][:int(len(infojson['species']))], start=1):
+                    names = i['name']
+                    list_species += "<li>{}) Common name  : {}</li>".format(k, names)
+                info = info.format(list_species)
+            else:
+                server = "http://rest.ensembl.org"
+                dir = "/info/species?"
+                r = requests.get(server + dir, headers={"Content-Type": "application/json"})
+                if not r.ok:
+                    f = open('error.html', 'r')
+                    info = f.read()
+                infojson = r.json()
+                list_species = """"""
+                limit = path.split('=')[1]
+                if limit == '':
+                    rank = int(len(infojson['species']))
                 else:
-                    num2 = int(num)
-                for k, i in enumerate(infojson['species'][:num2],start=1):
-                    index = i['name']
-                    listspecies += "<li>{}) Name  : {}</li>".format(k, index)
+                    rank = int(limit)
+
+                for k, i in enumerate(infojson['species'][:rank], start=1):
+                    names = i['name']
+
+                    list_species += "<li>{}) Common name  : {}</li>".format(k, names)
+
+                info = info.format(list_species)
 
         #2ºkaryotype option
         elif self.path.startswith('/karyotype'):
@@ -74,16 +77,16 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
                 <html lang="en">
                 <head>
                     <meta charset="UTF-8">
-                    <title>KARYOTYPE INFO</title>
+                    <title>KARYOTYPE </title>
                 </head>
                 <body style="background-color: green;">
-                    <p>Here is show the karyotype of the specie you have selected</p>
+                    <p>Karyotype selected:</p>
                     {}<br>
                     <a href="/"> back to the main page </a>
                 </body>
                 </html>
                 """
-            #first show that the species is in the list
+            #prove that the specie sis in the list
             species = (path.split('=')[1]).lower()
             t = 'info/assembly/' + species + '?content-type=application/json'
             PORT = 80
@@ -119,86 +122,71 @@ class TestHandler(http.server.BaseHTTPRequestHandler):
 
 
 
-        elif meth == "/chromosomeLength":
+        elif self.path.startswith('/chromosomeLength'):
             try:
-                options = meth_list[1].split("&")
-                chromosome = options[1][7:].upper()
-                userschoice = options[0][7:]
-                userschoice = userschoice.replace("+", "_")
-                server = "http://rest.ensembl.org"
-                dir = "/info/assembly/"
-                f = requests.get(server + dir + userschoice + "?", headers={"Content-Type": "application/json"})
+                c = str(path.split('=')[2])
+                s = str(path.split('=')[1].split('&')[0])
 
-
-                decoded = f.json()
-                chromosomelength = "none"
-                for i in decoded["top_level_region"]:
-                    if i["name"] == chromosome:
-                        chromosomelength = i["length"]
-                if chromosomelength == "none":
-                     j = open("data_error.html", "r")
-                     selectinfo = 'text/html'
+                if s == '' or c == '':
+                    f = open('data_error.html','r')
+                    info = f.read()
+                #the user must enter a couple non-empty values
                 else:
-                    j = open("length.html", "w")
-                    j.write('''<!DOCTYPE html>
-                                <html lang="en">
+                    server = "http://rest.ensembl.org"
+                    dir = "/info/assembly/" + s + "/" + c + "?"
+                    r = requests.get(server + dir, headers={"Content-Type": "application/json"})
+
+                    if r.ok:
+                        infojson = r.json()
+                        length = infojson['length']
+                        info = """<!DOCTYPE html>
+                                    <html lang="en">
                                     <head>
-                                         <meta charset="UTF-8">
-                                        <title>SELECTED CHROMOSOME'S LENGTH</title>
+                                        <meta charset="UTF-8">
+                                        <title>CHROMOSOME LENGTH</title>
                                     </head>
-                                    <body>
-                                        Chromosome length:   {}
+                                    <body style="background-color: lightblue;">
+                                        <p>Species: {} / Chromosome:{} / Length : {}</p>
+                                        <br>
+                                        <a href="/"> Main page </a>
                                     </body>
-                                </html>'''.format(chromosomelength))
+                                    </html>
+                                   """
 
 
-                    # Read the file
-                    j = open("length.html", 'r')
+                        info = info.format(s,c, length)
+                    else:
+                        f = open('data_error.html', 'r')
+                        info = f.read()
+            except KeyError:
+                f = open('data_error.html', 'r')
+                info = f.read()
             except IndexError:
-                j = open("parameter_error.html", "r")
-                code = 200
-            # Read the file
-            info = j.read()
-            selectinfo= 'text/html'
-
-
+                f = open('data_error.html', 'r')
+                info = f.read()
 
         else:
-            j = open("url_error.html", "r")
-            code = 200
-            info = j.read()
-            selectinfo = 'text/html'
-        # Generating the response message
-        self.send_response(code)
-        # Define the content-type header:
-        self.send_header('Content-Type', selectinfo)
+            f = open('data_error.html', 'r')
+            info = f.read()
+
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
         self.send_header('Content-Length', len(str.encode(info)))
         self.end_headers()
-        # response message
-        self.wfile.write(str.encode(info))
-
-        return
+        self.wfile.write(str.encode(info))#response message
 
 
-Handler = TestHandler
 
-# -- Open the socket server
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-
-    print("Serving at PORT", PORT)
-
-    # -- Main loop: Attend the client. Whenever there is a new
-    # -- clint, the handler is called
+###MAIN PROGRAMME
+with socketserver.TCPServer(("", PORT), TestHandler) as httpd:
+    print("serving at port {}".format(PORT))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("")
-        print("Stopped by the user")
         httpd.server_close()
 
 
-print("")
-print("Server Stopped")
 
 
 

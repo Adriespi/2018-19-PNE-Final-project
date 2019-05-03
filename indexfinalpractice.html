@@ -1,22 +1,35 @@
 <!DOCTYPE html>
-<lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HI! Welcome to the genome research page! </title>
+    <title>GENOMERESEARCH</title>
 </head>
-    <h1>Choose one of the following options:</h1>
-    </form>
-    <form action="listSpecies" method="get">
-        <legend>LIST OF SPECIES IN THE DATABASE</legend>
-            <p>Limit : <input type="text" name="top" ></p>
-            <p><button type="submit">Send</button></p>
-    </form>
+<body style="background-color: lightgreen;">
+
+<h1>SPECIES GENOME RESEARCH PAGE </h1>
+
+<form action="listSpecies" method="get">
+    <fieldset> <b>SPECIES' LIST</b>
+        Do you want a limit? :  <input type="number" name="limit" min="1" max="199"><br>
+        <input value="SUBMIT" type="submit"/>
+    </fieldset>
+</form>
+<fieldset> <b>KARYOTYPE INFO</b>
     <form action="karyotype" method="get">
-        <legend> KARYOTYPE INFO: </legend>
-        <p>Please introduce the species: <input type="'text" name="'species"></p>
-        <p><button type="'submit">Send</button></p>
+        Species:  <input type="text" name="species"><br>
+        <input value="SUBMIT" type="submit"/>
     </form>
-<body>
+</fieldset>
+
+<fieldset> <b>CHROMOSOME LENGTH</b>
+
+    <br>Specify species and chromosome:
+    <form action="chromosomeLength" method="get">
+        Species:<input type="text" name="s"> <br>
+        Chromosome: <input type="text" name="c"><br>
+        <input value="SUBMIT" type="submit"/>
+    </form>
+</fieldset>
 
 </body>
 </html>
