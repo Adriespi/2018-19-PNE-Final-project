@@ -7,3 +7,113 @@ the same time and work on them simultaneously.
 
 he primal structure of the code is already done, and I decided to test te connection
 to the server, wich works perfectly
+
+the code is structured in 3 main parts, each one for a different endpoint (3 of them), as well as the corresponding
+pieces of code in order to run the server and extracting the info from the api rest. On the other hand there's a couple
+html files: one for the main index and the other one is an standart error message that shows up whenever there's an exception.
+
+example of the index html file:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GENOME_RESEARCH</title>
+</head>
+<body style="background-color: lightgreen;">
+
+<h1>SPECIES GENOME RESEARCH PAGE </h1>
+
+<form action="listSpecies" method="get">
+    <fieldset> <b>SPECIES' LIST</b>
+        Select a limit (optional):  <input type="number" name="limit" min="1" max="199"><br>
+        <input value="SUBMIT" type="submit"/>
+    </fieldset>
+</form>
+<fieldset> <b>KARYOTYPE INFO</b>
+    <form action="karyotype" method="get">
+        Species:  <input type="text" name="species"><br>
+        <input value="SUBMIT" type="submit"/>
+    </form>
+</fieldset>
+
+<fieldset> <b>CHROMOSOME LENGTH</b>
+    <br>Specify species and chromosome:
+    <form action="chromosomeLength" method="get">
+        Species:<input type="text" name="s"> <br>
+        Chromosome: <input type="text" name="c"><br>
+        <input value="SUBMIT" type="submit"/>
+    </form>
+</fieldset>
+
+
+-fieldset is used in order for the menu to be cleaner, as it separateseach paragraph.
+This is how the page looks:
+
+SPECIES GENOME RESEARCH PAGE
+
+SPECIES' LIST Select a limit (optional):
+
+KARYOTYPE INFO
+
+Species:
+
+CHROMOSOME LENGTH
+
+Specify species and chromosome:
+
+Species:
+
+Chromosome: 
+
+
+
+
+Now the main class caontains html code , as I rewrite every option from the index once the user clicks on it.
+This is an example of how one of the endpoints looks like: 
+
+elif self.path.startswith('/chromosomeLength'):
+            try:
+                c = str(path.split('=')[2])
+                s = str(path.split('=')[1].split('&')[0])
+
+                if s == '' or c == '':
+                    f = open('data_error.html','r')
+                    info = f.read()
+                #the user must enter a couple non-empty values
+                else:
+                    server = "http://rest.ensembl.org"
+                    dir = "/info/assembly/" + s + "/" + c + "?"
+                    r = requests.get(server + dir, headers={"Content-Type": "application/json"})
+                    #.ok is the code 200, which means there's no errors
+                    if r.ok:
+                        infojson = r.json()
+                        length = infojson['length']
+                        info = """<!DOCTYPE html>
+                                    <html lang="en">
+                                    <head>
+                                        <meta charset="UTF-8">
+                                        <title>CHROMOSOME LENGTH</title>
+                                    </head>
+                                    <body style="background-color: lightgreen;">
+                                        <p>Species: {} / Chromosome:{} / Length : {}</p>
+                                        <br>
+                                        <a href="/"> Main page </a>
+                                    </body>
+                                    </html>
+                                   """
+
+
+                        info = info.format(s,c, length)
+                    else:
+                        f = open('data_error.html', 'r')
+                        info = f.read()
+            except KeyError:
+                f = open('data_error.html', 'r')
+                info = f.read()
+            except IndexError:
+                f = open('data_error.html', 'r')
+                info = f.read()
+
+some parts such as the variables r, dir and server are exactly de same in every one of the endpoints, as these variables
+are the ones in charge of requesting the information from the api rest, as well as info and infojson. The rest of it is basically 
+particular for each endpoint.
